@@ -1,0 +1,16 @@
+script_exporter POC
+Intro:
+ - We want to use https://github.com/ricoberger/script_exporter as POC for the UNIX AIX Engagement. 
+ The idea is to utilize the exporter to be able to SSH into each AIX Server, run any command and expose the scripts exit code, script duration and script output as Prometheus metrics
+
+POC:
+Build a Lab that showcases the above described use case. You can use Kubernetes (kind, minikube) and spin up a bunch of Pods, or just use Docker-Compose and use a container as a "node/server" or use Terraform & the Docker Provider
+Configure the script exporter & Prometheus so that Prometheus **probes** the exporter for each defined static target in the scrape config job and **scrapes** the Metrics collected from the Exporter
+The script to be executed can be a simple Shell script that takes the target (passed via Prometheus) SSHs into the target and runs a simple command (e.g whoami). 
+Hint: You will have to add a pregenerated SSH public key to your Container in order to SSH into them. Perhaps there are already working SSH Server container on hub.docker :) 
+Make the metrics exposed from the exporter available in Grafana (e.g Configure the Prometheus Server as a Data Source)
+
+- Make a container that is only accessable using SSH
+- Have exporter access a container using the SSH
+- Config prometheus to grab from exporter
+- Get prometheus into Grafana

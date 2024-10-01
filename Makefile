@@ -8,6 +8,14 @@ REVISION    ?= $(shell git rev-parse HEAD)
 BRANCH      ?= $(shell git rev-parse --abbrev-ref HEAD)
 BUILDUSER   ?= $(shell id -un)
 BUILDTIME   ?= $(shell date '+%Y-%m-%d@%H:%M:%S')
+NAMESPACE = script-exporter-ns
+
+default: help
+
+.PHONY: help
+help: ## list makefile targets
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+
 
 .PHONY: build build-darwin-amd64 build-linux-amd64 build-linux-armv7 build-linux-arm64 build-windows-amd64 clean release release-major release-minor release-patch
 
@@ -106,3 +114,77 @@ release-patch:
 	git pull
 	git tag -a $(PATCHVERSION) -m 'release $(PATCHVERSION)'
 	git push origin --tags
+
+.PHONY: launch
+launch: ## Launch kubernetes and such
+	@make kind
+	@make install-exporter
+	@make install-prometheus
+	@make install-grafana
+	@make wait-for-pods
+
+.PHONY: kind
+kind: 
+	@echo "Creating kind cluster..."
+	@kind create cluster --name script-exporter-cluster --config kind-config.yaml
+	@make namespace
+	@kubectl config set-context --current --namespace=${NAMESPACE}
+	@kubectl wait --for=condition=Ready node --all --timeout=60s
+
+.PHONY: namespace
+namespace:
+	@kubectl create namespace ${NAMESPACE}
+
+.PHONY: install-exporter
+install-exporter:
+	helm install script-exporter charts/script-exporter \
+	--namespace=${NAMESPACE}
+
+.PHONY: install-prometheus
+install-prometheus:
+	helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+	helm install prometheus prometheus-community/prometheus \
+	--namespace=${NAMESPACE} \
+	--values charts/prometheus-values.yaml
+
+.PHONY: install-grafana
+install-grafana:
+	kubectl create configmap custom-dashboard-config \
+	--from-file=charts/dashboards/custom-dashboard.json \
+	-n ${NAMESPACE}
+	helm repo add grafana https://grafana.github.io/helm-charts
+	helm install grafana grafana/grafana \
+	--namespace=${NAMESPACE} \
+	--values charts/grafana-values.yaml
+
+.PHONY: restart-grafana
+restart-grafana:
+	kubectl delete configmap custom-dashboard-config -n ${NAMESPACE}
+	helm uninstall grafana
+	make install-grafana
+
+.PHONY: wait-for-pods
+wait-for-pods:
+	@echo "Waiting for all pods to be in running state..."
+	@kubectl wait --namespace=${NAMESPACE} --for=condition=Ready pod --all --timeout=300s || { echo "timed out waiting for pods."; exit 1; }
+	@echo "All pods are running!"
+
+.PHONY: shutdown
+shutdown: ## shutdown k8s
+	@echo "shutting down..."
+	helm uninstall prometheus
+	helm uninstall grafana
+	helm uninstall script-exporter
+	kind delete cluster --name script-exporter-cluster
+
+.PHONY: ports-up
+ports-up: ## port forward services
+	kubectl port-forward svc/grafana 3000:80 --namespace=${NAMESPACE} &
+	kubectl port-forward svc/prometheus-server 9090:80 --namespace=${NAMESPACE} &
+	kubectl port-forward svc/script-exporter 9469:9469 --namespace=${NAMESPACE} &
+	@echo "Grafana - :3000, Prometheus = :9090, Exporter - :9469"
+
+.PHONY: ports-down
+ports-down: ## stop port-forwarding
+	@ps aux | grep "kubectl port-forward" | grep -v grep | awk '{print $$2}' | xargs kill
+

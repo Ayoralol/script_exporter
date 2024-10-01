@@ -1,0 +1,40 @@
+adminUser: admin
+adminPassword: admin
+
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        url: http://prometheus-server.script-exporter-ns.svc.cluster.local:80
+        access: proxy
+        isDefault: true
+        editable: true
+
+persistence:
+  type: pvc
+  enabled: true
+
+dashboardProviders:
+  dashboardproviders.yaml:
+    apiVersion: 1
+    providers:
+      - name: 'default'
+        orgId: 1
+        folder: ""
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/default
+
+extraVolumeMounts:
+  - name: dashboards
+    mountPath: /var/lib/grafana/dashboards/default/custom-dashboard.json
+    subPath: custom-dashboard.json
+
+extraVolumes:
+  - name: dashboards
+    configMap:
+      name: custom-dashboard-config
