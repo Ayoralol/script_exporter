@@ -12,7 +12,15 @@ prometheus-pushgateway:
   enabled: false
 
 extraScrapeConfigs: |
-  - job_name: script-exporter
+  - job_name: script-exporter-metrics
     metrics_path: /metrics
+    static_configs:
+      - targets: ["script-exporter:9469"]
+  - job_name: script-exporter-probe
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    metrics_path: /probe
+    params:
+      script: ['ssh_probe']
     static_configs:
       - targets: ["script-exporter:9469"]

@@ -45,6 +45,8 @@ scripts:
     args:
       - test1
       - test2
+  - name: ssh
+    command: ./examples/ssh_probe.sh
 
 scripts_configs:
   - ./examples/scripts_*.yaml

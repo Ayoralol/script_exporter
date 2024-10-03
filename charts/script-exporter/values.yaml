@@ -202,6 +202,8 @@ config: |
   scripts:
     - name: ping
       command: /etc/script-exporter/ping.sh
+    - name: ssh_probe
+      command: /etc/script-exporter/ssh_probe.sh
 
 ## A list of scripts which should be added to the container. It is also possible to add some scripts to the container,
 ## via the "volumes" and "volumeMounts" values.
@@ -211,3 +213,10 @@ scripts:
     #!/bin/bash
     ping -c 3 $1 > /dev/null 2>&1
     exit $?
+  ssh_probe.sh: |
+    #!/bin/sh
+    if ssh -i /root/.ssh/id_rsa root@ssh-server-service -o StrictHostKeyChecking=no "echo probe_success"; then
+      echo "ssh_connection_success 1"
+    else
+      echo "ssh_connection_success 0"
+    fi
