@@ -69,3 +69,5 @@ Temporary Items
 
 # Build directory
 bin
+
+id_rsa*

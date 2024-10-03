@@ -19,10 +19,9 @@ imagePullSecrets: []
 ## Set the image which should be used for script_exporter.
 ##
 image:
-  repository: ghcr.io/ricoberger/script_exporter
+  repository: script-exporter
+  tag: latest
   pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: ""
 
 ## Specify security settings for the created Pods. To set the security settings for the script_exporter Container use
 ## the corresponding "securityContext" field.

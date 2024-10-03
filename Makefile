@@ -117,8 +117,13 @@ release-patch:
 
 .PHONY: launch
 launch: ## Launch kubernetes and such
+	@make generate-ssh-keys
 	@make kind
+	@make create-ssh-secret
+	@make build-ssh-server
+	@make load-images
 	@make install-exporter
+	@make apply-ssh-server
 	@make install-prometheus
 	@make install-grafana
 	@make wait-for-pods
@@ -135,10 +140,20 @@ kind:
 namespace:
 	@kubectl create namespace ${NAMESPACE}
 
+.PHONY: load-images
+load-images:
+	kind load docker-image script-exporter:latest --name script-exporter-cluster
+	kind load docker-image ssh-server:latest --name script-exporter-cluster
+
 .PHONY: install-exporter
 install-exporter:
 	helm install script-exporter charts/script-exporter \
 	--namespace=${NAMESPACE}
+
+.PHONY: apply-ssh-server
+apply-ssh-server:
+	kubectl apply -f ssh-server/ssh-server-deployment.yaml --namespace=${NAMESPACE}
+	kubectl apply -f ssh-server/ssh-server-service.yaml --namespace=${NAMESPACE}
 
 .PHONY: install-prometheus
 install-prometheus:
@@ -172,6 +187,7 @@ wait-for-pods:
 .PHONY: shutdown
 shutdown: ## shutdown k8s
 	@echo "shutting down..."
+	@make ports-down
 	helm uninstall prometheus
 	helm uninstall grafana
 	helm uninstall script-exporter
@@ -188,3 +204,16 @@ ports-up: ## port forward services
 ports-down: ## stop port-forwarding
 	@ps aux | grep "kubectl port-forward" | grep -v grep | awk '{print $$2}' | xargs kill
 
+.PHONY: generate-ssh-keys
+generate-ssh-keys:
+	@if [ ! -f ./id_rsa_script_exporter ]; then \
+		ssh-keygen -t rsa -b 2048 -f id_rsa_script_exporter -N ""; \
+	fi
+
+.PHONY: create-ssh-secret
+create-ssh-secret:
+	kubectl create secret generic script-exporter-ssh-key --from-file=id_rsa_script_exporter --dry-run=client -o yaml | kubectl apply -f -
+
+.PHONY: build-ssh-server
+build-ssh-server:
+	docker build -t ssh-server:latest -f ssh-server/Dockerfile.ssh .

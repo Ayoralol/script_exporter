@@ -1,0 +1,7 @@
+FROM ubuntu:20.04
+RUN apt-get update && apt-get install -y openssh-server
+RUN mkdir /var/run/sshd && echo 'root:password' | chpasswd && sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+COPY id_rsa_script_exporter.pub /root/.ssh/authorized_keys
+RUN chmod 700 /root/.ssh && chmod 600 /root/.ssh/authorized_keys
+EXPOSE 22
+CMD ["/usr/sbin/sshd", "-D"]

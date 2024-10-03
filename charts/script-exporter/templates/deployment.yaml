@@ -34,6 +34,7 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- with .Values.env }}
+          command: ["/bin/sh", "-c", "chmod 600 /root/.ssh/id_rsa && /bin/script_exporter -config.file=/etc/script-exporter/config.yaml"]
           env:
             {{- toYaml . | nindent 12 }}
           {{- end }}
@@ -57,6 +58,10 @@ spec:
             - name: config
               mountPath: /etc/script-exporter
               readOnly: true
+            - name: ssh-key-volume
+              mountPath: /root/.ssh/id_rsa
+              subPath: id_rsa_script_exporter
+              readOnly: true
             {{- if .Values.volumeMounts }}
             {{- toYaml .Values.volumeMounts | nindent 12 }}
             {{- end }}
@@ -77,6 +82,10 @@ spec:
           configMap:
             name: {{ include "script-exporter.fullname" . }}
             defaultMode: 0777
+        - name: ssh-key-volume
+          secret:
+            secretName: script-exporter-ssh-key
+            defaultMode: 0600
         {{- if .Values.volumes }}
         {{- toYaml .Values.volumes | nindent 8 }}
         {{- end }}

@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ssh-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ssh-server
+  template:
+    metadata:
+      labels:
+        app: ssh-server
+    spec:
+      containers:
+      - name: ssh-server
+        image: ssh-server:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 22
