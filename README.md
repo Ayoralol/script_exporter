@@ -13,6 +13,49 @@ brew install kind
 brew install kubectl
 ```
 
+The current setup builds a fresh ssh-server image each launch, this is only for dev purposes to implement the correct ssh-keys and is not needed.  
+  
+To add a new script, you must add the info into values.yaml within the script-exporter helm chart.
+  
+```yaml
+config: |
+  scripts:
+    - name: ping
+      command: /etc/script-exporter/ping.sh
+    - name: ssh_probe
+      command: /etc/script-exporter/ssh_probe.sh
+
+scripts:
+  ping.sh: |
+    #!/bin/bash
+    ping -c 3 $1 > /dev/null 2>&1
+    exit $?
+  ssh_probe.sh: |
+    #!/bin/sh
+    if ssh -i /root/.ssh/id_rsa root@ssh-server-service -o StrictHostKeyChecking=no "echo probe_success"; then
+      echo "ssh_connection_success 1"
+    else
+      echo "ssh_connection_success 0"
+    fi
+```
+  
+Then you must add the scrape config for prometheus inside prometheus-values.yaml
+
+```yaml
+extraScrapeConfigs: |
+  - job_name: script-exporter-probe
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    metrics_path: /probe
+    params:
+      script: ['ssh_probe']
+    static_configs:
+      - targets: ["script-exporter:9469"]
+```
+  
+The script parameter must correlate with the script name in the above written config.  
+This runs the script when accessing the endpoint localhost:9469/probe?script=ssh_probe.
+
 
 # script_exporter
 
