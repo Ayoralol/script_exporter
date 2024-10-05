@@ -19,7 +19,7 @@ import (
 var sshConnectionDurationHist = prometheus.NewHistogramVec(
 	prometheus.HistogramOpts{
 		Namespace: "scripts",
-		Name:      "ssh_connection_duration_seconds",
+		Name:      "ssh_duration_seconds",
 		Help:      "Histogram of SSH connection duration in seconds.",
 		Buckets:   []float64{0.01, 0.05, 0.1, 0.2, 0.3, 0.5, 1, 2, 5, 10},
 	},
