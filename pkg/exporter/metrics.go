@@ -16,6 +16,16 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
+var sshConnectionDurationHist = prometheus.NewHistogramVec(
+	prometheus.HistogramOpts{
+		Namespace: "scripts",
+		Name:      "ssh_connection_duration_seconds",
+		Help:      "Histogram of SSH connection duration in seconds.",
+		Buckets:   []float64{0.01, 0.05, 0.1, 0.2, 0.3, 0.5, 1, 2, 5, 10},
+	},
+	[]string{"script", "target"},
+)
+
 func (e *Exporter) metricsHandler(scriptName string, params url.Values, prometheusTimeout string) (string, error) {
 	// Get prefix from url parameter
 	prefix := params.Get("prefix")
@@ -91,6 +101,9 @@ func (e *Exporter) metricsHandler(scriptName string, params url.Values, promethe
 			}
 		}
 	}
+
+	sshConnectionDuration := time.Since(scriptStartTime).Seconds()
+	sshConnectionDurationHist.WithLabelValues(scriptName, params.Get("target")).Observe(sshConnectionDuration)
 
 	// Get ignore output parameter and only return success and duration seconds if 'output=ignore'. If the script failed
 	// we also have to check the ignoreOutputOnFail setting of the script to only return the output when it is set to
@@ -233,7 +246,7 @@ func SetupMetrics(h http.HandlerFunc) http.Handler {
 	)
 	buildInfo.WithLabelValues(version.Version, version.Revision, version.Branch, version.GoVersion, version.BuildDate, version.BuildUser).Set(1)
 
-	prometheus.MustRegister(rdur, reqs, sreqs, sif, sdur, buildInfo)
+	prometheus.MustRegister(rdur, reqs, sreqs, sif, sdur, sshConnectionDurationHist, buildInfo)
 
 	// We don't use InstrumentHandlerInFlight, because that
 	// duplicates what we're doing on a per-script basis. The

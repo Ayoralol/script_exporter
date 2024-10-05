@@ -36,6 +36,8 @@ const (
 	scriptCacheType           = "# TYPE script_use_cache gauge"
 	scriptExpCacheHelp        = "# HELP script_use_expired_cache Script re-use expired cache (0 = no, 1 = yes)."
 	scriptExpCacheType        = "# TYPE script_use_expired_cache gauge"
+	sshConnectionDurationHelp = "# HELP ssh_connection_duration_seconds SSH connection time, in seconds."
+    sshConnectionDurationType = "# TYPE ssh_connection_duration_seconds histogram"
 )
 
 type Exporter struct {
