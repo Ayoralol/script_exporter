@@ -199,6 +199,7 @@ serviceMonitor:
 ## https://github.com/ricoberger/script_exporter/tree/main#usage-and-configuration
 ##
 config: |
+  scripts:
     - name: ssh_probe
       command: /etc/script-exporter/ssh_probe.sh
 
