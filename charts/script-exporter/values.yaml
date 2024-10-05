@@ -199,9 +199,6 @@ serviceMonitor:
 ## https://github.com/ricoberger/script_exporter/tree/main#usage-and-configuration
 ##
 config: |
-  scripts:
-    - name: ping
-      command: /etc/script-exporter/ping.sh
     - name: ssh_probe
       command: /etc/script-exporter/ssh_probe.sh
 
@@ -209,13 +206,17 @@ config: |
 ## via the "volumes" and "volumeMounts" values.
 ##
 scripts:
-  ping.sh: |
-    #!/bin/bash
-    ping -c 3 $1 > /dev/null 2>&1
-    exit $?
   ssh_probe.sh: |
     #!/bin/sh
-    if ssh -i /root/.ssh/id_rsa root@ssh-server-service -o StrictHostKeyChecking=no "echo probe_success"; then
+    for arg in "$@"
+    do
+      case $arg in
+        target=*)
+          target="${arg#*=}"
+          ;;
+      esac
+    done
+    if ssh -i /root/.ssh/id_rsa root@$target -o StrictHostKeyChecking=no "echo probe_success"; then
       echo "ssh_connection_success 1"
     else
       echo "ssh_connection_success 0"

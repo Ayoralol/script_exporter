@@ -150,6 +150,11 @@ install-exporter:
 	helm install script-exporter charts/script-exporter \
 	--namespace=${NAMESPACE}
 
+.PHONY: update-exporter
+update-exporter:
+	helm upgrade script-exporter charts/script-exporter \
+	--namespace=${NAMESPACE}
+
 .PHONY: apply-ssh-server
 apply-ssh-server:
 	kubectl apply -f ssh-server/ssh-server-deployment.yaml --namespace=${NAMESPACE}
@@ -161,6 +166,11 @@ install-prometheus:
 	helm install prometheus prometheus-community/prometheus \
 	--namespace=${NAMESPACE} \
 	--values charts/prometheus-values.yaml
+
+.PHONY: restart-prometheus
+restart-prometheus:
+	helm uninstall prometheus
+	make install-prometheus
 
 .PHONY: install-grafana
 install-grafana:

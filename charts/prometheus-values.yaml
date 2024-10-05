@@ -16,11 +16,22 @@ extraScrapeConfigs: |
     metrics_path: /metrics
     static_configs:
       - targets: ["script-exporter:9469"]
-  - job_name: script-exporter-probe
+  - job_name: ssh_probe
     scrape_interval: 30s
     scrape_timeout: 10s
     metrics_path: /probe
     params:
       script: ['ssh_probe']
     static_configs:
-      - targets: ["script-exporter:9469"]
+      - targets:
+        - ssh-server-service
+        - fake-ssh-server
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - target_label: __address__
+        replacement: script-exporter:9469
+      - source_labels: [__param_target]
+        target_label: target
+      - source_labels: [__param_target]
+        target_label: instance
