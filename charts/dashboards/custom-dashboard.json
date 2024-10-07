@@ -96,7 +96,7 @@
           "exemplar": false,
           "expr": "ssh_connection_success{job=\"$job\", instance=~\"$instance\"}",
           "instant": false,
-          "legendFormat": "{{target}}",
+          "legendFormat": "{{instance}}",
           "range": true,
           "refId": "A"
         }
@@ -193,7 +193,7 @@
           "editorMode": "code",
           "expr": "ssh_connection_success",
           "instant": false,
-          "legendFormat": "{{target}}",
+          "legendFormat": "{{instance}}",
           "range": true,
           "refId": "A"
         }
@@ -290,7 +290,7 @@
           "editorMode": "code",
           "expr": "script_duration_seconds",
           "instant": false,
-          "legendFormat": "{{target}}",
+          "legendFormat": "{{instance}}",
           "range": true,
           "refId": "A"
         }

@@ -209,15 +209,20 @@ config: |
 scripts:
   ssh_probe.sh: |
     #!/bin/sh
+
     for arg in "$@"
     do
       case $arg in
+        ssh_key=*)
+          ssh_key="${arg#*=}"
+          ;;
         target=*)
           target="${arg#*=}"
           ;;
       esac
     done
-    if ssh -i /root/.ssh/id_rsa root@$target -o StrictHostKeyChecking=no "echo probe_success"; then
+
+    if ssh -i $ssh_key root@$target -o StrictHostKeyChecking=no "echo probe_success"; then
       echo "ssh_connection_success 1"
     else
       echo "ssh_connection_success 0"
